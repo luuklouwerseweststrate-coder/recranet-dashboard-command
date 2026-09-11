@@ -96,6 +96,91 @@ function seedDatabase() {
   };
 }
 
+function publicDashboardUrl(client) {
+  const fallbackPath = `/?client=${client.slug || client.id}`;
+  const currentUrl = client.dashboardUrl || fallbackPath;
+  if (currentUrl.startsWith('http://localhost') || currentUrl.startsWith('http://127.0.0.1')) {
+    return `${FRONTEND_ORIGIN}${fallbackPath}`;
+  }
+  if (currentUrl.startsWith('/')) return `${FRONTEND_ORIGIN}${currentUrl}`;
+  return currentUrl;
+}
+
+function mergeConnector(existingConnector, seedConnector) {
+  return {
+    ...existingConnector,
+    ...seedConnector,
+    config: {
+      ...(existingConnector?.config ?? {}),
+      ...(seedConnector.config ?? {}),
+    },
+    lastSyncAt: existingConnector?.lastSyncAt ?? null,
+    lastError: existingConnector?.lastError ?? null,
+  };
+}
+
+function normalizeDb(db) {
+  let changed = false;
+  const seedById = Object.fromEntries(clientRegistry.map((client) => [client.id, client]));
+
+  db.clients = db.clients.map((client) => {
+    const seedClient = seedById[client.id];
+    const nextClient = {
+      ...client,
+      dashboardUrl: publicDashboardUrl(client),
+    };
+
+    if (nextClient.dashboardUrl !== client.dashboardUrl) changed = true;
+
+    if (client.id === 'weststrate' && seedClient) {
+      const connectorById = Object.fromEntries(
+        client.connectors.map((connector) => [connector.id, connector]),
+      );
+      const nextConnectors = seedClient.connectors.map((seedConnector) =>
+        mergeConnector(connectorById[seedConnector.id], seedConnector),
+      );
+
+      Object.assign(nextClient, {
+        status: seedClient.status,
+        dashboardUrl: publicDashboardUrl(seedClient),
+        lastReportAt:
+          client.lastReportAt && client.lastReportAt !== 'Nog niet verzonden'
+            ? client.lastReportAt
+            : seedClient.lastReportAt,
+        health: Math.max(client.health ?? 0, seedClient.health ?? 0),
+        dataScale: seedClient.dataScale,
+        connectors: nextConnectors,
+        decisionProfile: seedClient.decisionProfile,
+      });
+
+      changed =
+        changed ||
+        JSON.stringify({
+          status: client.status,
+          dashboardUrl: client.dashboardUrl,
+          lastReportAt: client.lastReportAt,
+          health: client.health,
+          dataScale: client.dataScale,
+          connectors: client.connectors,
+          decisionProfile: client.decisionProfile,
+        }) !==
+          JSON.stringify({
+            status: nextClient.status,
+            dashboardUrl: nextClient.dashboardUrl,
+            lastReportAt: nextClient.lastReportAt,
+            health: nextClient.health,
+            dataScale: nextClient.dataScale,
+            connectors: nextClient.connectors,
+            decisionProfile: nextClient.decisionProfile,
+          });
+    }
+
+    return nextClient;
+  });
+
+  return changed;
+}
+
 async function readDb() {
   await mkdir(DATA_DIR, { recursive: true });
 
@@ -107,6 +192,9 @@ async function readDb() {
 
     db.snapshots = db.snapshots ?? {};
     db.syncState = db.syncState ?? {};
+    db.auditLog = db.auditLog ?? [];
+
+    let changed = false;
 
     if (missingClients.length) {
       db.clients.push(
@@ -138,6 +226,21 @@ async function readDb() {
         target: 'backend',
         meta: { clients: missingClients.map((client) => client.id) },
       });
+      changed = true;
+    }
+
+    if (normalizeDb(db)) {
+      changed = true;
+      db.auditLog.unshift({
+        id: randomBytes(8).toString('hex'),
+        at: new Date().toISOString(),
+        actor: 'system',
+        action: 'database.normalized',
+        target: 'backend',
+      });
+    }
+
+    if (changed) {
       await writeDb(db);
     }
 

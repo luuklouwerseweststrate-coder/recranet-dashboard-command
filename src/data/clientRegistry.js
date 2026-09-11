@@ -21,11 +21,11 @@ export const clientRegistry = [
     slug: 'weststrate',
     name: 'Weststrate',
     type: 'Projectinrichting',
-    status: 'Setup',
+    status: 'Monitoring',
     owner: 'Luuk',
-    dashboardUrl: 'http://localhost:5173/?client=weststrate',
-    lastReportAt: 'Nog niet verzonden',
-    health: 72,
+    dashboardUrl: '/?client=weststrate',
+    lastReportAt: 'Live configuratie actief',
+    health: 86,
     dataScale: 1.2,
     connectors: [
       {
@@ -38,15 +38,15 @@ export const clientRegistry = [
       {
         id: 'search-console',
         label: 'Search Console',
-        status: 'Voorbereid',
-        detail: 'OAuth opnieuw koppelen en property kiezen',
+        status: 'Verbonden',
+        detail: 'https://weststrate.nl/ gekoppeld',
         config: { siteUrl: 'https://weststrate.nl/' },
       },
       {
         id: 'ga4',
         label: 'GA4',
-        status: 'Voorbereid',
-        detail: 'Property ID uit bestaande SEO-dashboard configuratie',
+        status: 'Verbonden',
+        detail: 'GA4 property 252925743 gekoppeld',
         config: { propertyId: '252925743', purchaseEvent: 'purchase' },
       },
       {
