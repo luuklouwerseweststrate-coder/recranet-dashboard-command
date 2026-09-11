@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
-import { randomBytes, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -29,7 +29,8 @@ const SESSION_COOKIE = 'recranet_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 const SYNC_INTERVAL_MS = Number(process.env.SYNC_INTERVAL_MS || 10 * 60 * 1000);
 const COOKIE_SAME_SITE = process.env.COOKIE_SAME_SITE || (process.env.NODE_ENV === 'production' ? 'None' : 'Lax');
-const sessions = new Map();
+const SESSION_SECRET =
+  process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || randomBytes(32).toString('hex');
 
 function assertRuntimeConfig() {
   if (process.env.NODE_ENV !== 'production') return;
@@ -52,6 +53,52 @@ function verifyPassword(password, stored) {
   const [salt, hash] = stored.split(':');
   const candidate = hashPassword(password, salt).split(':')[1];
   return timingSafeEqual(Buffer.from(candidate, 'hex'), Buffer.from(hash, 'hex'));
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+function base64UrlDecode(value) {
+  return Buffer.from(value, 'base64url').toString('utf8');
+}
+
+function signSessionPayload(payload) {
+  return createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
+}
+
+function createSessionToken(userId) {
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      userId,
+      expiresAt: Date.now() + SESSION_TTL_MS,
+    }),
+  );
+  return `${payload}.${signSessionPayload(payload)}`;
+}
+
+function readSessionToken(token) {
+  if (!token || !token.includes('.')) return null;
+
+  const [payload, signature] = token.split('.');
+  const expectedSignature = signSessionPayload(payload);
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (
+    signatureBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+
+  try {
+    const session = JSON.parse(base64UrlDecode(payload));
+    if (!session.userId || !session.expiresAt || session.expiresAt < Date.now()) return null;
+    return session;
+  } catch {
+    return null;
+  }
 }
 
 function seedDatabase() {
@@ -309,12 +356,12 @@ function parseCookies(req) {
   );
 }
 
-function setSessionCookie(res, sessionId) {
+function setSessionCookie(res, sessionToken) {
   const sameSite = `; SameSite=${COOKIE_SAME_SITE}`;
   const secure = process.env.NODE_ENV === 'production' || COOKIE_SAME_SITE === 'None' ? '; Secure' : '';
   res.setHeader(
     'set-cookie',
-    `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}; HttpOnly${sameSite}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}${secure}`,
+    `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; HttpOnly${sameSite}; Path=/; Max-Age=${SESSION_TTL_MS / 1000}${secure}`,
   );
 }
 
@@ -335,13 +382,9 @@ async function readBody(req) {
 }
 
 async function currentUser(req, db) {
-  const sessionId = parseCookies(req)[SESSION_COOKIE];
-  const session = sessionId ? sessions.get(sessionId) : null;
-
-  if (!session || session.expiresAt < Date.now()) {
-    if (sessionId) sessions.delete(sessionId);
-    return null;
-  }
+  const sessionToken = parseCookies(req)[SESSION_COOKIE];
+  const session = readSessionToken(sessionToken);
+  if (!session) return null;
 
   return db.users.find((user) => user.id === session.userId) ?? null;
 }
@@ -474,19 +517,12 @@ async function handleApi(req, res) {
       return json(res, 401, { ok: false, error: 'Invalid credentials' });
     }
 
-    const sessionId = randomBytes(32).toString('hex');
-    sessions.set(sessionId, {
-      userId: matchedUser.id,
-      expiresAt: Date.now() + SESSION_TTL_MS,
-    });
-    setSessionCookie(res, sessionId);
+    setSessionCookie(res, createSessionToken(matchedUser.id));
     await addAudit(db, matchedUser, 'auth.login', matchedUser.id);
     return json(res, 200, { ok: true, user: publicUser(matchedUser) });
   }
 
   if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
-    const sessionId = parseCookies(req)[SESSION_COOKIE];
-    if (sessionId) sessions.delete(sessionId);
     clearSessionCookie(res);
     return json(res, 200, { ok: true });
   }

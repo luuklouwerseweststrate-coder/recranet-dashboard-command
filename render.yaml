@@ -16,6 +16,8 @@ services:
         sync: false
       - key: CLIENT_PASSWORD
         sync: false
+      - key: SESSION_SECRET
+        sync: false
       - key: COOKIE_SAME_SITE
         value: None
       - key: SYNC_INTERVAL_MS
