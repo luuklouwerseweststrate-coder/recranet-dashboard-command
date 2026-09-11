@@ -22,7 +22,6 @@ import {
 import { dashboardPrototype, formatDelta, formatMetric } from './data/dashboardPrototype.js';
 import { clientRegistry } from './data/clientRegistry.js';
 import recranetLogoUrl from './assets/recranet-logo.svg';
-import { exportDashboardPresentation } from './utils/exportPresentation.js';
 import { apiFetch } from './utils/apiClient.js';
 import { createReportingContext, periodOptions } from './utils/reportingContext.js';
 
@@ -1283,7 +1282,6 @@ function App() {
   const [selectedSegment, setSelectedSegment] = useState('families');
   const [period, setPeriod] = useState('month');
   const [scenario, setScenario] = useState('base');
-  const [isExporting, setIsExporting] = useState(false);
   const [clients, setClients] = useState(loadClients);
   const [selectedClientId, setSelectedClientId] = useState(clients[0].id);
   const [liveSnapshotState, setLiveSnapshotState] = useState({
@@ -1338,13 +1336,6 @@ function App() {
   const selectedSegmentData =
     report.segments.find((segment) => segment.id === selectedSegment) ?? report.segments[0];
   const isRecreationClient = ['Camping', 'Vakantiepark'].includes(selectedClient.type);
-  const projected = useMemo(
-    () => ({
-      revenue: report.metrics.expectedRevenue,
-      bookings: report.metrics.expectedBookings,
-    }),
-    [report],
-  );
 
   useEffect(() => {
     if (!auth) return;
@@ -1406,25 +1397,6 @@ function App() {
       cancelled = true;
     };
   }, [auth, selectedClient?.id]);
-
-  async function handlePresentationExport() {
-    if (!isAdmin) return;
-
-    setIsExporting(true);
-    try {
-      await exportDashboardPresentation({
-        dashboard,
-        report,
-        projected,
-        scenarioLabel: scenarioConfig.label,
-      });
-    } catch (error) {
-      console.error(error);
-      window.alert('De PowerPoint-export kon niet worden gemaakt. Probeer het opnieuw.');
-    } finally {
-      setIsExporting(false);
-    }
-  }
 
   function persistClients(nextClients) {
     setClients(nextClients);
@@ -1550,19 +1522,6 @@ function App() {
               </p>
             </div>
             <div className="header-actions">
-              {isAdmin ? (
-                <button
-                  aria-label="Export naar PowerPoint"
-                  className="export-button"
-                  disabled={isExporting}
-                  onClick={handlePresentationExport}
-                  title="Export naar PowerPoint"
-                  type="button"
-                >
-                  <Download size={16} />
-                  {isExporting ? 'Exporteren' : 'Export'}
-                </button>
-              ) : null}
               <HeaderDropdown
                 icon={<CalendarDays size={18} />}
                 label="Periode"
