@@ -819,6 +819,42 @@ function AvailabilityTable({ availability }) {
   );
 }
 
+function DemandOpportunityList({ report }) {
+  const items = [
+    ...report.queries.slice(0, 3).map((query) => ({
+      label: query.query,
+      detail: `${formatMetric(query.clicks, 'number')} klikken - positie ${query.position
+        .toString()
+        .replace('.', ',')}`,
+      value: formatMetric(query.impressions, 'number'),
+      tag: 'Query',
+      tone: query.ctr >= 4 ? 'hoog' : 'middel',
+    })),
+    ...report.contentOpportunities.slice(0, 2).map((item) => ({
+      label: item.topic,
+      detail: item.impact,
+      value: formatMetric(item.demand, 'number'),
+      tag: 'Kans',
+      tone: item.difficulty === 'Laag werk' ? 'hoog' : 'middel',
+    })),
+  ].slice(0, 5);
+
+  return (
+    <div className="availability-list demand-opportunity-list">
+      {items.map((item) => (
+        <article key={`${item.tag}-${item.label}`}>
+          <div>
+            <strong>{item.label}</strong>
+            <span>{item.detail}</span>
+          </div>
+          <b>{item.value}</b>
+          <span className={`demand demand-${item.tone}`}>{item.tag}</span>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function ManagementCenter({
   clients,
   liveSnapshotState,
@@ -1286,6 +1322,7 @@ function App() {
   );
   const selectedSegmentData =
     report.segments.find((segment) => segment.id === selectedSegment) ?? report.segments[0];
+  const isRecreationClient = ['Camping', 'Vakantiepark'].includes(selectedClient.type);
   const projected = useMemo(
     () => ({
       revenue: report.metrics.expectedRevenue,
@@ -1604,8 +1641,20 @@ function App() {
             </section>
 
             <section className="dashboard-grid">
-              <Panel className="panel-wide" label="Planning" title={`Beschikbaarheid ${report.period.toLowerCase()}`}>
-                <AvailabilityTable availability={report.availability} />
+              <Panel
+                className="panel-wide"
+                label={isRecreationClient ? 'Planning' : 'Search Console'}
+                title={
+                  isRecreationClient
+                    ? `Beschikbaarheid ${report.period.toLowerCase()}`
+                    : 'Vraag en kansen'
+                }
+              >
+                {isRecreationClient ? (
+                  <AvailabilityTable availability={report.availability} />
+                ) : (
+                  <DemandOpportunityList report={report} />
+                )}
               </Panel>
               <Panel label="Acties" title="Prioriteiten">
                 <ActionBoard actions={report.actionPlan} />

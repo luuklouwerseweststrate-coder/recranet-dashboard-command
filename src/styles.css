@@ -1223,6 +1223,15 @@ h1 {
   background: #f6fafc;
 }
 
+.demand-opportunity-list article {
+  grid-template-columns: minmax(0, 1fr) minmax(74px, auto) auto;
+}
+
+.demand-opportunity-list b {
+  color: var(--ink);
+  text-align: right;
+}
+
 .availability-list span {
   display: block;
   color: var(--muted);
