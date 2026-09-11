@@ -1,22 +1,9 @@
 import argparse
 import json
-import os
-import sys
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SEO_DASHBOARD = Path(os.environ.get("SEO_DASHBOARD_PATH", ROOT.parent / "seo-dashboard")).resolve()
-if not SEO_DASHBOARD.exists():
-    raise RuntimeError(
-        f"SEO_DASHBOARD_PATH bestaat niet: {SEO_DASHBOARD}. "
-        "Zet SEO_DASHBOARD_PATH naar de map met auth.py, ga4_client.py en search_console_client.py."
-    )
-sys.path.insert(0, str(SEO_DASHBOARD))
-
-from auth import get_credentials  # noqa: E402
-from ga4_client import fetch_internal_searches  # noqa: E402
-from search_console_client import fetch_page_performance, fetch_query_performance  # noqa: E402
+from google_auth import get_credentials
+from google_ga4_client import fetch_internal_searches
+from google_search_console_client import fetch_page_performance, fetch_query_performance
 
 
 def main():

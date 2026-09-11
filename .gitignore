@@ -3,6 +3,7 @@ dist/
 vite-dev.log
 .env
 .env.local
+.env.render-google.local
 .env.production
 .vercel/
 server/data/

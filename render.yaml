@@ -20,5 +20,9 @@ services:
         value: None
       - key: SYNC_INTERVAL_MS
         value: 600000
-      - key: SEO_DASHBOARD_PATH
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
         sync: false

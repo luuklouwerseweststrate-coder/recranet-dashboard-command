@@ -12,6 +12,7 @@ const execFileAsync = promisify(execFile);
 const DATA_DIR = process.env.DATA_DIR ? resolve(process.env.DATA_DIR) : join(__dirname, 'data');
 const DB_FILE = process.env.DB_FILE ? resolve(process.env.DB_FILE) : join(DATA_DIR, 'db.json');
 const PORT = Number(process.env.PORT || 8787);
+const PYTHON_BIN = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 const ALLOWED_ORIGINS = new Set(
   [
@@ -364,7 +365,7 @@ function googleConfigForClient(client) {
 
 async function fetchGoogleSnapshot({ siteUrl, propertyId, days = 30 }) {
   const { stdout } = await execFileAsync(
-    'python',
+    PYTHON_BIN,
     [
       join(__dirname, 'google_snapshot.py'),
       '--site-url',
