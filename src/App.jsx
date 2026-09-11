@@ -529,6 +529,7 @@ function CommandSummary({ dashboard, report }) {
 
 function TrendChart({ data, forecast = [] }) {
   const [activePoint, setActivePoint] = useState(null);
+  const [prefersHover, setPrefersHover] = useState(false);
   const currentRevenue = forecast[0]?.revenue ?? data.reduce((total, item) => total + item.revenue, 0);
   const historicalRatios = [0.52, 0.59, 0.64, 0.72, 0.83, 0.93, 1];
   const historicalData = data.map((item, index) => ({
@@ -550,6 +551,16 @@ function TrendChart({ data, forecast = [] }) {
     })
     .join(' ');
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const query = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const updateHoverPreference = () => setPrefersHover(query.matches);
+    updateHoverPreference();
+    query.addEventListener('change', updateHoverPreference);
+    return () => query.removeEventListener('change', updateHoverPreference);
+  }, []);
+
   return (
     <div className="trend-chart" aria-label="Omzettrend met prognose">
       <svg viewBox="0 0 400 170" role="img">
@@ -567,12 +578,16 @@ function TrendChart({ data, forecast = [] }) {
                 className={`trend-hit-area ${index >= data.length ? 'forecast-dot' : ''}`}
                 cx={x}
                 cy={y}
-                onBlur={() => setActivePoint(null)}
-                onFocus={() => setActivePoint(point)}
-                onMouseEnter={() => setActivePoint(point)}
-                onMouseLeave={() => setActivePoint(null)}
+                onBlur={() => prefersHover && setActivePoint(null)}
+                onFocus={() => prefersHover && setActivePoint(point)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType === 'mouse') setActivePoint(point);
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === 'mouse') setActivePoint(null);
+                }}
                 r="13"
-                tabIndex="0"
+                tabIndex={prefersHover ? '0' : '-1'}
               />
               <circle
                 className={index >= data.length ? 'forecast-dot' : ''}

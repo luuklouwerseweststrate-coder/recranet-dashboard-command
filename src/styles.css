@@ -967,6 +967,7 @@ h1 {
 .trend-chart {
   position: relative;
   width: 100%;
+  touch-action: pan-y;
 }
 
 .trend-chart svg {
@@ -1005,6 +1006,12 @@ h1 {
   stroke: transparent;
   cursor: crosshair;
   outline: none;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .trend-chart .trend-hit-area {
+    pointer-events: none;
+  }
 }
 
 .trend-chart .trend-hit-area:hover + circle,
