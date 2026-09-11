@@ -1483,6 +1483,7 @@ function App() {
       </aside>
 
       <section className="workspace">
+        <div className="view-stage" key={`${activeTab}-${selectedClient.id}`}>
         {!isManagement && activeTab === 'overview' && (
           <header className="topbar">
             <div>
@@ -1738,7 +1739,7 @@ function App() {
             />
           ) : null
         )}
-
+        </div>
       </section>
     </main>
   );
