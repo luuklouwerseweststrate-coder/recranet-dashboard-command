@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: recranet-dashboard-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CLIENT_PASSWORD
+        sync: false
+      - key: COOKIE_SAME_SITE
+        value: None
+      - key: SYNC_INTERVAL_MS
+        value: 600000
+      - key: SEO_DASHBOARD_PATH
+        sync: false

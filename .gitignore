@@ -1,0 +1,15 @@
+node_modules/
+dist/
+vite-dev.log
+.env
+.env.local
+.env.production
+.vercel/
+server/data/
+test-results/
+__pycache__/
+*.pyc
+*.pptx
+*.png
+dashboard-mail-preview.html
+recranet-home.html

@@ -1,0 +1,24 @@
+{
+  "name": "recranet-dashboard-command",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node --watch server/server.js",
+    "dev:full": "node server/dev.js",
+    "start:api": "node server/server.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dashboard:mail": "python tools/dashboard_mail.py",
+    "dashboard:mail:setup": "python ../ga4-akeneo-gap-analyzer/auto_analyze.py --setup"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "pptxgenjs": "^4.0.1",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  }
+}
