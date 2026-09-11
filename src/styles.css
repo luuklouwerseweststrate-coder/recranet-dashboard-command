@@ -1037,7 +1037,9 @@ h1 {
   z-index: 5;
   display: grid;
   gap: 3px;
+  width: max-content;
   min-width: 152px;
+  max-width: min(220px, calc(100% - 24px));
   padding: 10px 11px;
   border: 1px solid rgba(11, 120, 155, 0.32);
   border-radius: 8px;

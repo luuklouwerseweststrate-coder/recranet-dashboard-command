@@ -603,7 +603,7 @@ function TrendChart({ data, forecast = [] }) {
         <div
           className="trend-tooltip"
           style={{
-            left: `${(activePoint.x / 400) * 100}%`,
+            left: `${Math.min(82, Math.max(18, (activePoint.x / 400) * 100))}%`,
             top: `${(activePoint.y / 170) * 100}%`,
           }}
         >
