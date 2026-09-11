@@ -819,39 +819,6 @@ function AvailabilityTable({ availability }) {
   );
 }
 
-function TrustStrip({ auth, liveSnapshotState, selectedClient }) {
-  const syncLabel =
-    liveSnapshotState.clientId === selectedClient.id && liveSnapshotState.snapshot
-      ? liveSnapshotState.message
-      : 'Laatste server-snapshot wordt automatisch geladen';
-
-  return (
-    <section className="trust-strip" aria-label="Dataveiligheid en bronstatus">
-      <article>
-        <ShieldCheck size={17} />
-        <div>
-          <span>Toegang</span>
-          <strong>{auth.role === 'admin' ? 'Beheerder' : 'Klant'} sessie actief</strong>
-        </div>
-      </article>
-      <article>
-        <Lock size={17} />
-        <div>
-          <span>Tokens</span>
-          <strong>Server-side, niet in de browser</strong>
-        </div>
-      </article>
-      <article>
-        <Link2 size={17} />
-        <div>
-          <span>Bronnen</span>
-          <strong>{syncLabel}</strong>
-        </div>
-      </article>
-    </section>
-  );
-}
-
 function ManagementCenter({
   clients,
   liveSnapshotState,
@@ -1587,14 +1554,6 @@ function App() {
               />
             </div>
           </header>
-        )}
-
-        {!isManagement && activeTab === 'overview' && (
-          <TrustStrip
-            auth={auth}
-            liveSnapshotState={liveSnapshotState}
-            selectedClient={selectedClient}
-          />
         )}
 
         {activeTab === 'overview' && <CommandSummary dashboard={dashboard} report={report} />}
