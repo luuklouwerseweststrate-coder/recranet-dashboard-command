@@ -2210,6 +2210,11 @@ code {
   line-height: 1.4;
 }
 
+.live-sync-details {
+  display: grid;
+  gap: 3px;
+}
+
 .live-sync-message.status-success {
   border-color: #b8dbe7;
   background: #eef8fb;

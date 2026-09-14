@@ -95,6 +95,37 @@ function saveClients(clients) {
   window.localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(clients));
 }
 
+function formatDateLabel(value) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('nl-NL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatDateTimeLabel(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('nl-NL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function snapshotPeriodLabel(snapshot) {
+  const startDate = formatDateLabel(snapshot?.period?.startDate);
+  const endDate = formatDateLabel(snapshot?.period?.endDate);
+  if (!startDate || !endDate) return null;
+  return `${startDate} t/m ${endDate}`;
+}
+
 function emptyClient() {
   return {
     id: `client-${Date.now()}`,
@@ -1034,23 +1065,38 @@ function ManagementCenter({
               <div className={`live-sync-message status-${liveSnapshotState.status}`}>
                 <strong>{liveSnapshotState.message}</strong>
                 {liveSnapshotState.snapshot ? (
-                  <span>
-                    {formatMetric(
-                      liveSnapshotState.snapshot.searchConsole.totals.clicks,
-                      'number',
-                    )}{' '}
-                    klikken,{' '}
-                    {formatMetric(
-                      liveSnapshotState.snapshot.searchConsole.totals.impressions,
-                      'number',
-                    )}{' '}
-                    impressies en{' '}
-                    {formatMetric(
-                      liveSnapshotState.snapshot.ga4.totalInternalSearches,
-                      'number',
-                    )}{' '}
-                    interne zoekopdrachten.
-                  </span>
+                  <div className="live-sync-details">
+                    <span>
+                      {formatMetric(
+                        liveSnapshotState.snapshot.searchConsole.totals.clicks,
+                        'number',
+                      )}{' '}
+                      klikken,{' '}
+                      {formatMetric(
+                        liveSnapshotState.snapshot.searchConsole.totals.impressions,
+                        'number',
+                      )}{' '}
+                      impressies en{' '}
+                      {formatMetric(
+                        liveSnapshotState.snapshot.ga4.totalInternalSearches,
+                        'number',
+                      )}{' '}
+                      interne zoekopdrachten.
+                    </span>
+                    <span>
+                      Periode:{' '}
+                      {snapshotPeriodLabel(liveSnapshotState.snapshot) ??
+                        `laatste ${liveSnapshotState.snapshot.days ?? 30} dagen`}
+                      . Opgehaald:{' '}
+                      {formatDateTimeLabel(liveSnapshotState.snapshot.fetchedAt) ??
+                        'onbekend'}
+                      .
+                    </span>
+                    <span>
+                      Search Console-totalen zijn site-totalen; de query- en paginatabellen
+                      tonen alleen de bovenste resultaten.
+                    </span>
+                  </div>
                 ) : null}
               </div>
             ) : null}

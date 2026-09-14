@@ -2,14 +2,18 @@ from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, OrderBy, RunReportRequest
 
 
-def fetch_internal_searches(credentials, property_id, days=30):
+def fetch_internal_searches(credentials, property_id, days=30, start_date=None, end_date=None):
     client = BetaAnalyticsDataClient(credentials=credentials)
+    date_range = DateRange(
+        start_date=start_date or f"{days}daysAgo",
+        end_date=end_date or "today",
+    )
 
     request = RunReportRequest(
         property=f"properties/{property_id}",
         dimensions=[Dimension(name="searchTerm")],
         metrics=[Metric(name="eventCount")],
-        date_ranges=[DateRange(start_date=f"{days}daysAgo", end_date="today")],
+        date_ranges=[date_range],
         order_bys=[
             OrderBy(metric=OrderBy.MetricOrderBy(metric_name="eventCount"), desc=True),
         ],
